@@ -108,8 +108,9 @@ if [ -z $DEVNAME ]; then
    DDROC="OFF"
    DDROCX="OFF"
    OVOLT="OFF"
-   SETVOLT="OFF"
-   SVOLT1="OFF"
+   SETSPEC="OFF"
+   SSPEC1="OFF"
+   SSPEC2="OFF"
 fi
 }
 
@@ -135,9 +136,12 @@ function outtahere
  exit
 }
 
+
+
 # Change device name option
 function cdev
 {
+ checkspec
  clear
  echo
  echo "   ================[ DEVICE BUILD ]================="
@@ -150,7 +154,7 @@ function cdev
  echo "             WIFI CHIPSET: $SETWIFI"
  echo "             BLUETOOTH CHIPSET: $SETBT"
  echo "             PMU CHIPSET: $SETPMU"
- echo "             VOLT SPECIALS: $SETVOLT"
+ echo "             SPECIAL SETTINGS: $SETSPEC"
  echo "   ================================================="
  read -e -p "   Device name, no spaces [Blank to RETURN]: " DEVNAME
  if [ "$DEVNAME" = "" ]; then
@@ -171,18 +175,27 @@ function devtemp
 	SETWIFI="AP6210";
 	SETBT="AP6210";
 	SETPMU="ACT8846";
-	SETVOLT="ON";
-	SVOLT1="ON";
+	SSPEC1="ON";
+	SSPEC2="OFF";
  	;;
  2)
-	SETLCD="LCDC1"
-	SETWIFI="AP6330"
-	SETBT="AP6330"
-	SETPMU="NO CLUE"
-	SETVOLT="OFF"
-	SVOLT1="OFF"
+	SETLCD="LCDC1";
+	SETWIFI="AP6330";
+	SETBT="AP6330";
+	SETPMU="ACT8846";
+	SSPEC1="OFF";
+	SSPEC2="OFF";
+	;;
+  3)	
+	SETLCD="LCDC1";
+	SETWIFI="RTL8188eu";
+	SETBT="RDA58";
+	SETPMU="ACT8846";
+	SSPEC1="OFF";
+	SSPEC2="ON";
 	;;
  esac
+ cdev
 }
 
 # devices menu, this will be updated with new devices *after* device 
@@ -195,8 +208,9 @@ function devitems
 	clear
 	echo
 	echo "   =============[ DEVICES MENU ]============="
-	echo "   1. MK908"
-	echo "   2. T428 (in progress)"
+	echo "   1. Tronsmart MK908"
+	echo "   2. Tronsmart T428"
+	echo "   3. Imito QX-1"
 	echo "   =----------------------------------------="
 	echo "   A. (don't see your device? get it added!)"
 	echo "   ==========================================="
@@ -208,13 +222,12 @@ function devitems
 	if [ "$devopt" = "1" ]; then
 		DEVTEMPLATE="1"
 		devtemp
-		cdev
-		mainopt
 	elif [ "$devopt" = "2" ]; then
 		DEVTEMPLATE="2"
 		devtemp
-		cdev
-		mainopt
+	elif [ "$devopt" = "3" ]; then
+		DEVTEMPLATE="3"
+		devtemp
 	elif [[ "$devopt" = "A" || "$devopt" = "a" ]]; then
 		clear
 		echo "   Have a RK3188 device not listed here and you want"
@@ -226,7 +239,7 @@ function devitems
 		echo "      - WiFi chipset (ie AP6210)"
 		echo "      - Bluetooth chipset (ie AP6330)"
 		echo "      - PMU chipset (ie ACT8846)"
-		echo "      - any special voltage requirements for GPIOs"
+		echo "      - any special requirements (GPIOs, volts, etc.)"
 		echo
 		echo "   If you can't provide any of this information, don't"
 		echo "   expect it to get added. I really don't have time to"
@@ -320,6 +333,7 @@ function wifiitems
  	echo "   =--------------------------="
  	echo "   1. AP6210 combo (like MK908)"
  	echo "   2. AP6330 combo (like T428)"
+ 	echo "   3. RTL8188eu (like QX-1)"
  	echo "   ============================"
  	echo "   >> 0. EXIT"
  	echo 
@@ -332,6 +346,9 @@ function wifiitems
  	   SETWIFI="AP6330"
  	   SETBT="AP6330"
  	   break
+	elif [ "$wifiopt" = "3" ]; then
+	   SETWIFI="RTL8188eu"
+	   break
 	fi 	 
  done
 }
@@ -351,6 +368,7 @@ function btitems
  	echo "   =---------------------------="
  	echo "   1. AP6210 combo (like MK908)"
  	echo "   2. AP6330 combo (like T428)"
+ 	echo "   3. RDA58 (like QX-1)"
  	echo "   ============================="
  	echo "   >> 0. EXIT"
  	echo 
@@ -363,6 +381,9 @@ function btitems
  	   SETBT="AP6210"
  	   SETWIFI="AP6210"
  	   break
+	elif [ "$btopt" = "3" ]; then
+	   SETBT="RDA58"
+	   break
 	fi 	 
  done
 }
@@ -531,43 +552,52 @@ function subddr
  done
 }
 
-# Volt Check function
-# if more special voltages get added, expand on this checker
-function checkvolt
+# Specials Check function
+# if more special requirement get added, expand on this checker
+function checkspec
 {
- if [ "$SVOLT1" = "ON" ]; then
-  SETVOLT="ON"
+ if [[ "$SSPEC1" = "ON" || "$SSPEC2" = "ON" ]]; then
+  SETSPEC="ON"
  else
-  SETVOLT="OFF"
+  SETSPEC="OFF"
  fi
 }
-# Special volt Settings menu
-function voltitems
+
+# Special REQUIREMENTS Settings menu
+# this started out as special volts, but just morphed into special
+# requirements. No need to change variables/names really.
+function specitems
 {
- voltopt=""
- while [ "$voltopt" != "0" ]
+ specopt=""
+ while [ "$specopt" != "0" ]
  do
+ 	checkspec
 	clear
 	echo
-	echo "   =============[ SPECIAL VOLTAGES ]============="
-	echo "                    Current: $SETVOLT"
-	echo "   =--------------------------------------------="
-	echo "   1. WiFi/BT Volt Special 1 (1.8 ie MK908) : $SVOLT1"
-	echo "   =--------------------------------------------="
-	echo "   X. Clear all special voltages"
-	echo "   =============================================="
-	read -n 1 -p "   Select a special voltage [0 = EXIT] : " voltopt
-	if [ "$voltopt" = "1" ]; then
-	   if [ "$SVOLT1" = "ON" ]; then
-		SVOLT1="OFF"	   
-		checkvolt
+	echo "   ===============[ SPECIAL REQUIREMENTS ]================"
+	echo "                        Current: $SETSPEC"
+	echo "   =-----------------------------------------------------="
+	echo "   1. $SSPEC1 : WiFi/BT Volt 1 [1.8 ldo6] (MK908)"
+	echo "   2. $SSPEC2 : WiFi/BT Volt 2 [3.0 dcdc4, BT GPIO PD1] (QX-1)"
+	echo "   =-----------------------------------------------------="
+	echo "   X. Clear all special requirements"
+	echo "   ======================================================="
+	read -n 1 -p "   Select any specials [0 = EXIT] : " specopt
+	if [ "$specopt" = "1" ]; then
+	   if [ "$SSPEC1" = "ON" ]; then
+		SSPEC1="OFF"	   
 	   else
-		SVOLT1="ON"
-		checkvolt
+		SSPEC1="ON"
 	   fi
-	elif [[ "$voltopt" = "X" || "$voltopt" = "x" ]]; then
-	   SETVOLT="OFF"
-	   SVOLT1="OFF"
+	elif [ "$specopt" = "2" ]; then
+	   if [ "$SSPEC2" = "ON" ]; then
+		SSPEC2="OFF"
+	   else
+		SSPEC2="ON"
+	   fi
+	elif [[ "$specopt" = "X" || "$specopt" = "x" ]]; then
+	   SSPEC1="OFF"
+	   SSPEC2="OFF"
 	fi
  done
 }
@@ -1271,7 +1301,7 @@ function mainopt
 	echo "I| D. WIFI: $SETWIFI"
 	echo "C| E. BLUETOOTH: $SETBT"
 	echo "E| F. PMU: $SETPMU"
-	echo "S| G. VOLT SPECIALS: $SETVOLT"
+	echo "S| G. SPECIALS SETTINGS: $SETSPEC"
 	echo -n " | O. OVERCLOCK: $SETOC"
 	if [ "$SETOC" != "OFF" ]; then
          echo -n " ["
@@ -1337,7 +1367,7 @@ function mainopt
 	elif [[ "$choice" = "f" || "$choice" = "F" ]]; then
 		pmuitems
 	elif [[ "$choice" = "g" || "$choice" = "G" ]]; then
-		voltitems
+		specitems
 	elif [[ "$choice" = "o" || "$choice" = "O" ]]; then
 		ocitems
 	elif [ "$choice" = "0" ]; then

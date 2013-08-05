@@ -40,8 +40,11 @@ calls for you)
 - Overclocking options
 
 **Current Devices supported:**
-- MK908
-- T428 (almost done)
+- Tronsmart MK908
+- Tronsmart T428
+- Imito QX-1
+
+--------------------
 
 **INSTRUCTIONS:**
 - run ./buildit.sh from commandline in an RK3188 kernel tree
@@ -71,5 +74,6 @@ just take the generated defconfig and get it to me
 
 **CREDITS:**
 - Me (duh)
-- phjanderson (@freaktab) for making the suggestion
+- phjanderson (@freaktab) for making the suggestion and T428 config
+- Leolas (@freaktab) QX-1 config 
 - Your name could go here if/when you submit a new device :)
