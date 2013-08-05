@@ -43,6 +43,22 @@ calls for you)
 - MK908
 - T428 (almost done)
 
+**INSTRUCTIONS:**
+- run ./buildit.sh from commandline in an RK3188 kernel tree
+- commandline opts of: -v for vers, -b for unattended build, -?/h for help,
+no parameters specified will run LABS through the menu system
+
+**NOTES:**
+A number of features are linked to my kernel tree (ie. the toolchains, etc.)
+It doesn't take much to edit the script to relax your personal tree if you 
+don't use mine. Script is commented enough to help you find what you need.
+Notably, some of the options are linked to source files in arch/arm/mach-rk3188
+that I have modified to handle as kernel config options (so you don't have to
+constantly flag the define tags in the source file). However, if you are using
+your own kernel source, you will need to look at my Kconfig and 
+board-rk3188-box.c (look for the SAW-tagged comments) and mimic some of them to
+achieve the same results (for now, anyways)
+
 **REVISION HISTORY:**
 - based off build_mk908.sh (LABS 1.5) in my kernel source
 - created new repo just for it, now LABS 2.1 and called buildit.sh
