@@ -47,7 +47,7 @@ calls for you)
 --------------------
 
 **INSTRUCTIONS:**
-- run ./buildit.sh from commandline in an RK3188 kernel tree
+- run ./BUILDIT.sh from commandline in a RK3188 kernel tree
 - commandline opts of: -v for vers, -b for unattended build, -?/h for help,
 no parameters specified will run LABS through the menu system
 
@@ -70,6 +70,10 @@ achieve the same results (for now, anyways)
 - (2.2) features added, more checkers, added QX1
 - (2.3) config builder created and linked and menus updated
 - config builder moved to separate script, not meant to be run alone
+- renamed scripts.. just because (now BUILDIT.sh and CFGCORE.sh)
+- (2.4) added in debugging, Mali and exFAT kernel options (if available)
+- major fleshing out in the config builder (CFGCORE.sh) and running it by itself
+ will cause the script to generate an example defconfig (EXAMPLE-CONFIG)
 
 **TODO:**
 - config builder mailer. If you customize your device config for a device 

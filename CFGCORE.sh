@@ -2,9 +2,29 @@
 
 # This is an auxillary script for building the kernel config options
 # into a file. It is NOT meant to be called by itself as it needs
-# parameters from the main buildit.sh to determine what's needed for
-# building. As a fallback, I will try and make this script build an
-# example defconfig (probably based off mk MK908) if run by itself
+# parameters from the main BUILDIT.sh to determine what's needed for
+# building. As a fallback, I made this script build an example defconfig
+# if run by itself.
+#
+# Since this file is so packed with config options, I've comment
+# flagged each featureset with a SAW tag (so just search for SAW to 
+# find each feature section
+
+# Example config builder initialized here if someone is silly enough
+# to call this script by itself...
+if [ "$CFGFILE" = "" ]; then
+ CFGFILE="EXAMPLE-CONFIG"
+ DEVNAME="EXAMPLE"
+ clear
+ echo
+ echo "   Normally this script is not supposed to be run as a standalone"
+ echo "   script and serves as a companion script to BUILDIT.sh to handle"
+ echo "   the config building. But since you insisted on running it, all"
+ echo "   we are going to do is make an EXAMPLE-CONFIG for you to check out."
+ echo "   The EXAMPLE-CONFIG created is fairly sanitized and just serves as"
+ echo "   a starting point with basic RK3188 support in it. Have fun."
+ echo 
+fi
 
 echo "#
 # Automatically generated make config: don't edit
@@ -51,6 +71,7 @@ CONFIG_HAVE_KERNEL_LZO=y
 # CONFIG_KERNEL_LZMA is not set
 CONFIG_KERNEL_LZO=y" > ${CFGFILE}
 
+# SAW - DEVICE/HOSTNAME
 echo -n "CONFIG_DEFAULT_HOSTNAME=\"" >> ${CFGFILE}
 if [ "$DEVNAME" != "" ]; then
  echo "$DEVNAME\"" >> ${CFGFILE}
@@ -181,20 +202,48 @@ CONFIG_BLK_DEV_BSG=y
 #
 # IO Schedulers
 #
-CONFIG_IOSCHED_NOOP=y
-CONFIG_IOSCHED_SIO=y
-CONFIG_IOSCHED_VR=y
-CONFIG_IOSCHED_ZEN=y
-CONFIG_IOSCHED_DEADLINE=y
-CONFIG_IOSCHED_CFQ=y
-CONFIG_IOSCHED_ROW=y
-# CONFIG_DEFAULT_DEADLINE is not set
-# CONFIG_DEFAULT_CFQ is not set
-# CONFIG_DEFAULT_SIO is not set
-# CONFIG_DEFAULT_VR is not set
-# CONFIG_DEFAULT_ZEN is not set
-# CONFIG_DEFAULT_ROW is not set
-CONFIG_DEFAULT_NOOP=y
+CONFIG_IOSCHED_NOOP=y" >> ${CFGFILE}
+
+# SAW - I have extra io schedulers installed in my kernel source
+# need to check for them and adjust config accordingly to omit or add in
+if [ -e block/sio-iosched.c ]; then
+ echo "CONFIG_IOSCHED_SIO=y" >> ${CFGFILE}
+fi
+if [ -e block/vr-iosched.c ]; then
+ echo "CONFIG_IOSCHED_VR=y" >> ${CFGFILE}
+fi
+if [ -e block/zen-iosched.c ]; then
+ echo "CONFIG_IOSCHED_ZEN=y" >> ${CFGFILE}
+fi
+if [ -e block/deadline-iosched.c ]; then
+ echo "CONFIG_IOSCHED_DEADLINE=y" >> ${CFGFILE}
+fi
+if [ -e block/cfq-iosched.c ]; then
+ echo "CONFIG_IOSCHED_CFQ=y" >> ${CFGFILE}
+fi
+if [ -e block/row-iosched.c ]; then
+ echo "CONFIG_IOSCHED_ROW=y" >> ${CFGFILE}
+fi
+if [ -e block/deadline-iosched.c ]; then
+ echo "# CONFIG_DEFAULT_DEADLINE is not set" >> ${CFGFILE}
+fi
+if [ -e block/cfq-iosched.c ]; then
+ echo "# CONFIG_DEFAULT_CFQ is not set" >> ${CFGFILE}
+fi
+if [ -e block/sio-iosched.c ]; then
+ echo "# CONFIG_DEFAULT_SIO is not set" >> ${CFGFILE}
+fi
+if [ -e block/vr-iosched.c ]; then
+ echo "# CONFIG_DEFAULT_VR is not set" >> ${CFGFILE}
+fi
+if [ -e block/zen-iosched.c ]; then
+ echo "# CONFIG_DEFAULT_ZEN is not set" >> ${CFGFILE}
+fi
+if [ -e block/row-iosched.c ]; then
+ echo "# CONFIG_DEFAULT_ROW is not set" >> ${CFGFILE}
+fi
+
+echo "CONFIG_DEFAULT_NOOP=y
 CONFIG_DEFAULT_IOSCHED=\"noop\"
 # CONFIG_INLINE_SPIN_TRYLOCK is not set
 # CONFIG_INLINE_SPIN_TRYLOCK_BH is not set
@@ -315,9 +364,19 @@ CONFIG_ARCH_RK3188=y
 # CONFIG_DDR_TYPE_DDR3_2133M is not set
 # CONFIG_DDR_TYPE_DDR3_2133N is not set
 CONFIG_DDR_TYPE_DDR3_DEFAULT=y
-CONFIG_DDR_INIT_CHANGE_FREQ=y
-CONFIG_DDR_SDRAM_FREQ=792
-CONFIG_DDR_FREQ=y
+CONFIG_DDR_INIT_CHANGE_FREQ=y" >> ${CFGFILE}
+
+# SAW - DDR (OVER)CLOCK OPTION
+if [ "$DDROCX" = "ON" ]; then
+ # need to get an extreme DDR OC freq to put here later
+ echo "CONFIG_DDR_SDRAM_FREQ=792" >> ${CFGFILE}
+elif [[ "$DDROC" = "ON" && "$DDROCX" = "OFF" ]]; then
+ echo "CONFIG_DDR_SDRAM_FREQ=792" >> ${CFGFILE}
+else
+ echo "CONFIG_DDR_SDRAM_FREQ=396" >> ${CFGFILE}
+fi
+
+echo "CONFIG_DDR_FREQ=y
 # CONFIG_DDR_TEST is not set
 CONFIG_DVFS=y
 CONFIG_RK_CLOCK_PROC=y
@@ -344,20 +403,76 @@ CONFIG_SOC_RK3188=y
 # CONFIG_MACH_RK3188_LR097 is not set
 # CONFIG_MACH_RK3188_DS1006H is not set
 CONFIG_MACH_RK3188_BOX=y
+" >> ${CFGFILE}
 
-#
+# SAW - need to find a way to make this kernel neutral in case someone
+# using these scripts does not have these changes implemented in their
+# board files..(TODO)
+if [ "$SETOC" = "OFF" ]; then
+ echo "#
 # RK3188 OVERCLOCK
 #
-CONFIG_OVERCLOCK_CPU=y
+# CONFIG_OVERCLOCK_CPU is not set
 # CONFIG_EXTREME_OCCPU is not set
-CONFIG_OVERCLOCK_GPU=y
+# CONFIG_OVERCLOCK_GPU is not set
 # CONFIG_EXTERME_OCGPU is not set
-CONFIG_OVERCLOCK_RAM=y
+# CONFIG_OVERCLOCK_RAM is not set
 # CONFIG_EXTREME_OCRAM is not set
-CONFIG_OVERVOLT_CPU=y
-CONFIG_RK_VOLT1=y
-# CONFIG_RK_VOLT2 is not set
+# CONFIG_OVERVOLT_CPU is not set" >> ${CFGFILE}
+else 
+ echo "#
+# RK3188 OVERCLOCK
+#" >> ${CFGFILE}
+ if [ "$CPUOC" = "ON" ]; then
+  echo "CONFIG_OVERCLOCK_CPU=y" >> ${CFGFILE}
+ else
+  echo "# CONFIG_OVERCLOCK_CPU is not set" >> ${CFGFILE}
+ fi
+ if [ "$CPUOCX" = "ON" ]; then
+  echo "CONFIG_EXTREME_OCCPU=y" >> ${CFGFILE}
+ else
+  echo "# CONFIG_EXTREME_OCCPU is not set" >> ${CFGFILE}
+ fi 
+ if [ "$GPUOC" = "ON" ]; then
+  echo "CONFIG_OVERCLOCK_GPU=y" >> ${CFGFILE}
+ else
+  echo "# CONFIG_OVERCLOCK_GPU is not set" >> ${CFGFILE}
+ fi 
+ if [ "$GPUOCX" = "ON" ]; then
+  echo "CONFIG_EXTREME_OCGPU=y" >> ${CFGFILE}
+ else
+  echo "# CONFIG_EXTREME_OCGPU is not set" >> ${CFGFILE}
+ fi
+ if [ "$DDROC" = "ON" ]; then
+  echo "CONFIG_OVERCLOCK_RAM=y" >> ${CFGFILE}
+ else
+  echo "# CONFIG_OVERCLOCK_RAM is not set" >> ${CFGFILE}
+ fi
+ if [ "$DDROCX" = "ON" ]; then
+  echo "CONFIG_EXTREME_OCRAM=y" >> ${CFGFILE}
+ else
+  echo "# CONFIG_EXTREME_OCRAM is not set" >> ${CFGFILE}
+ fi
+ if [ "$OVOLT" = "ON" ]; then
+  echo "CONFIG_OVERVOLT_CPU=y" >> ${CFGFILE}
+ else
+  echo "# CONFIG_OVERVOLT_CPU is not set" >> ${CFGFILE}
+ fi
+fi
 
+# SAW - Special requirements options
+if [ "$SSPEC1" = "ON" ]; then
+ echo "CONFIG_RK_VOLT1=y" >> ${CFGFILE}
+else
+ echo "# CONFIG_RK_VOLT1 is not set" >> ${CFGFILE}
+fi
+if [ "$SSPEC2" = "ON" ]; then
+ echo "CONFIG_RK_VOLT2=y" >> ${CFGFILE}
+else
+ echo "# CONFIG_RK_VOLT2 is not set" >> ${CFGFILE}
+fi
+
+echo "
 #
 # System MMU
 #
@@ -506,38 +621,102 @@ CONFIG_CPU_FREQ_STAT=y
 # CONFIG_CPU_FREQ_DEFAULT_GOV_PERFORMANCE is not set
 # CONFIG_CPU_FREQ_DEFAULT_GOV_POWERSAVE is not set
 # CONFIG_CPU_FREQ_DEFAULT_GOV_USERSPACE is not set
-# CONFIG_CPU_FREQ_DEFAULT_GOV_ONDEMAND is not set
-# CONFIG_CPU_FREQ_DEFAULT_GOV_ONDEMANDX is not set
-# CONFIG_CPU_FREQ_DEFAULT_GOV_CONSERVATIVE is not set
-CONFIG_CPU_FREQ_DEFAULT_GOV_INTERACTIVE=y
-# CONFIG_CPU_FREQ_DEFAULT_GOV_INTERACTIVEX is not set
-# CONFIG_CPU_FREQ_DEFAULT_GOV_BRAZILIANWAX is not set
-# CONFIG_CPU_FREQ_DEFAULT_GOV_SAVAGEDZEN is not set
-# CONFIG_CPU_FREQ_DEFAULT_GOV_ADAPTIVE is not set
-# CONFIG_CPU_FREQ_DEFAULT_GOV_HYPER is not set
-# CONFIG_CPU_FREQ_DEFAULT_GOV_INTELLIDEMAND is not set
-# CONFIG_CPU_FREQ_DEFAULT_GOV_LIONHEART is not set
-# CONFIG_CPU_FREQ_DEFAULT_GOV_LULZACTIVE is not set
-# CONFIG_CPU_FREQ_DEFAULT_GOV_SMARTASS2 is not set
-# CONFIG_CPU_FREQ_DEFAULT_GOV_MINMAX is not set
-CONFIG_CPU_FREQ_GOV_PERFORMANCE=y
-CONFIG_CPU_FREQ_GOV_POWERSAVE=y
-CONFIG_CPU_FREQ_GOV_USERSPACE=y
-CONFIG_CPU_FREQ_GOV_ONDEMAND=y
-# CONFIG_CPU_FREQ_GOV_ONDEMANDX is not set
-CONFIG_CPU_FREQ_GOV_INTERACTIVE=y
-# CONFIG_CPU_FREQ_GOV_INTERACTIVEX is not set
-CONFIG_CPU_FREQ_GOV_CONSERVATIVE=y
-CONFIG_CPU_FREQ_GOV_SMARTASS2=y
-# CONFIG_CPU_FREQ_GOV_BRAZILIANWAX is not set
-# CONFIG_CPU_FREQ_GOV_SAVAGEDZEN is not set
-# CONFIG_CPU_FREQ_GOV_ADAPTIVE is not set
-# CONFIG_CPU_FREQ_GOV_HYPER is not set
-# CONFIG_CPU_FREQ_GOV_INTELLIDEMAND is not set
-# CONFIG_CPU_FREQ_GOV_LIONHEART is not set
-# CONFIG_CPU_FREQ_GOV_LULZACTIVE is not set
-# CONFIG_CPU_FREQ_GOV_MINMAX is not set
-CONFIG_CPU_IDLE=y
+# CONFIG_CPU_FREQ_DEFAULT_GOV_ONDEMAND is not set" >> ${CFGFILE}
+
+# SAW - I have a number of governors installed in my kernel source
+# need to check for them in this source and add or omit them accordingly
+if [ -e drivers/cpufreq/cpufreq_ondemandx.c ]; then
+ echo"# CONFIG_CPU_FREQ_DEFAULT_GOV_ONDEMANDX is not set" >> ${CFGFILE}
+fi
+if [ -e drivers/cpufreq/cpufreq_conservative.c ]; then
+ echo "# CONFIG_CPU_FREQ_DEFAULT_GOV_CONSERVATIVE is not set" >> ${CFGFILE}
+fi
+if [ -e drivers/cpufreq/cpufreq_interactive.c ]; then
+ echo "CONFIG_CPU_FREQ_DEFAULT_GOV_INTERACTIVE=y" >> ${CFGFILE}
+fi
+if [ -e drivers/cpufreq/cpufreq_interactivex.c ]; then
+ echo "# CONFIG_CPU_FREQ_DEFAULT_GOV_INTERACTIVEX is not set" >> ${CFGFILE}
+fi
+if [ -e drivers/cpufreq/cpufreq_brazilianwax.c ]; then
+ echo "# CONFIG_CPU_FREQ_DEFAULT_GOV_BRAZILIANWAX is not set" >> ${CFGFILE}
+fi
+if [ -e drivers/cpufreq/cpufreq_savagedzen.c ]; then
+ echo "# CONFIG_CPU_FREQ_DEFAULT_GOV_SAVAGEDZEN is not set" >> ${CFGFILE}
+fi
+if [ -e drivers/cpufreq/cpufreq_adaptive.c ]; then
+ echo "# CONFIG_CPU_FREQ_DEFAULT_GOV_ADAPTIVE is not set" >> ${CFGFILE}
+fi
+if [ -e drivers/cpufreq/cpufreq_hyper.c ]; then
+ echo "# CONFIG_CPU_FREQ_DEFAULT_GOV_HYPER is not set" >> ${CFGFILE}
+fi
+if [ -e drivers/cpufreq/cpufreq_intellidemand.c ]; then
+ echo "# CONFIG_CPU_FREQ_DEFAULT_GOV_INTELLIDEMAND is not set" >> ${CFGFILE}
+fi
+if [ -e drivers/cpufreq/cpufreq_lionheart.c ]; then
+ echo "# CONFIG_CPU_FREQ_DEFAULT_GOV_LIONHEART is not set" >> ${CFGFILE}
+fi
+if [ -e drivers/cpufreq/cpufreq_lulzactive.c ]; then
+ echo "# CONFIG_CPU_FREQ_DEFAULT_GOV_LULZACTIVE is not set" >> ${CFGFILE}
+fi
+if [ -e drivers/cpufreq/cpufreq_smartass2.c ]; then
+ echo "# CONFIG_CPU_FREQ_DEFAULT_GOV_SMARTASS2 is not set" >> ${CFGFILE}
+fi
+if [ -e drivers/cpufreq/cpufreq_minmax.c ]; then
+ echo "# CONFIG_CPU_FREQ_DEFAULT_GOV_MINMAX is not set" >> ${CFGFILE}
+fi
+if [ -e drivers/cpufreq/cpufreq_performance.c ]; then
+ echo "CONFIG_CPU_FREQ_GOV_PERFORMANCE=y" >> ${CFGFILE}
+fi
+if [ -e drivers/cpufreq/cpufreq_powersave.c ]; then
+ echo "CONFIG_CPU_FREQ_GOV_POWERSAVE=y" >> ${CFGFILE}
+fi
+if [ -e drivers/cpufreq/cpufreq_userspace.c ]; then
+ echo "CONFIG_CPU_FREQ_GOV_USERSPACE=y" >> ${CFGFILE}
+fi
+if [ -e drivers/cpufreq/cpufreq_ondemand.c ]; then
+ echo "CONFIG_CPU_FREQ_GOV_ONDEMAND=y" >> ${CFGFILE}
+fi
+if [ -e drivers/cpufreq/cpufreq_ondemandx.c ]; then
+ echo "# CONFIG_CPU_FREQ_GOV_ONDEMANDX is not set" >> ${CFGFILE}
+fi
+if [ -e drivers/cpufreq/cpufreq_interactive.c ]; then
+ echo "CONFIG_CPU_FREQ_GOV_INTERACTIVE=y" >> ${CFGFILE}
+fi
+if [ -e drivers/cpufreq/cpufreq_interactivex.c ]; then
+ echo "# CONFIG_CPU_FREQ_GOV_INTERACTIVEX is not set" >> ${CFGFILE}
+fi
+if [ -e drivers/cpufreq/cpufreq_conservative.c ]; then
+ echo "CONFIG_CPU_FREQ_GOV_CONSERVATIVE=y" >> ${CFGFILE}
+fi
+if [ -e drivers/cpufreq/cpufreq_smartass2.c ]; then
+ echo "CONFIG_CPU_FREQ_GOV_SMARTASS2=y" >> ${CFGFILE}
+fi
+if [ -e drivers/cpufreq/cpufreq_brazilianwax.c ]; then
+ echo "# CONFIG_CPU_FREQ_GOV_BRAZILIANWAX is not set" >> ${CFGFILE}
+fi
+if [ -e drivers/cpufreq/cpufreq_savagedzen.c ]; then
+ echo "# CONFIG_CPU_FREQ_GOV_SAVAGEDZEN is not set" >> ${CFGFILE}
+fi
+if [ -e drivers/cpufreq/cpufreq_adaptive.c ]; then
+ echo "# CONFIG_CPU_FREQ_GOV_ADAPTIVE is not set" >> ${CFGFILE}
+fi
+if [ -e drivers/cpufreq/cpufreq_hyper.c ]; then
+ echo "# CONFIG_CPU_FREQ_GOV_HYPER is not set" >> ${CFGFILE}
+fi
+if [ -e drivers/cpufreq/cpufreq_intellidemand.c ]; then
+ echo "# CONFIG_CPU_FREQ_GOV_INTELLIDEMAND is not set" >> ${CFGFILE}
+fi
+if [ -e drivers/cpufreq/cpufreq_lionheart.c ]; then
+ echo "# CONFIG_CPU_FREQ_GOV_LIONHEART is not set" >> ${CFGFILE}
+fi
+if [ -e drivers/cpufreq/cpufreq_lulzactive.c ]; then
+ echo "# CONFIG_CPU_FREQ_GOV_LULZACTIVE is not set" >> ${CFGFILE}
+fi
+if [ -e drivers/cpufreq/cpufreq_minmax.c ]; then
+ echo "# CONFIG_CPU_FREQ_GOV_MINMAX is not set" >> ${CFGFILE}
+fi
+
+echo "CONFIG_CPU_IDLE=y
 CONFIG_CPU_IDLE_GOV_LADDER=y
 CONFIG_CPU_IDLE_GOV_MENU=y
 
@@ -2059,17 +2238,40 @@ CONFIG_USB_S2255=y
 #
 # CONFIG_DRM is not set
 CONFIG_ION=y
-CONFIG_ION_ROCKCHIP=y
-# CONFIG_MALI is not set
-CONFIG_MALI400=m
-CONFIG_MALI400_DEBUG=y
-CONFIG_MALI400_PROFILING=y
+CONFIG_ION_ROCKCHIP=y" >> ${CFGFILE}
+
+# SAW - MALI DRIVER OPTION
+if [[ -d drivers/gpu/mali || -h drivers/gpu/mali ]]; then
+ if [ "$SMALI" = "ON" ]; then
+  echo "# CONFIG_MALI is not set
+CONFIG_MALI400=m" >> ${CFGFILE}
+  if [ "$SDBG" = "ON" ]; then
+   echo "CONFIG_MALI400_DEBUG=y" >> ${CFGFILE}
+  else
+   echo "# CONFIG_MALI400_DEBUG is not set" >> ${CFGFILE}
+  fi
+  echo "CONFIG_MALI400_PROFILING=y
 CONFIG_MALI400_INTERNAL_PROFILING=y
-CONFIG_MALI400_UMP=y
 # CONFIG_MALI_SHARED_INTERRUPTS is not set
-CONFIG_UMP=m
-CONFIG_UMP_DEBUG=y
-# CONFIG_VGASTATE is not set
+CONFIG_UMP=m" >> ${CFGFILE}
+  if [ "$SDBG" = "ON" ]; then
+   echo "CONFIG_UMP_DEBUG=y" >> ${CFGFILE}
+  else
+   echo "# CONFIG_UMP_DEBUG is not set" >> ${CFGFILE}
+  fi
+ else
+  echo "# CONFIG_MALI is not set
+# CONFIG_MALI400 is not set
+# CONFIG_MALI400_DEBUG is not set
+# CONFIG_MALI400_PROFILING is not set
+# CONFIG_MALI400_INTERNAL_PROFILING is not set
+# CONFIG_MALI_SHARED_INTERRUPTS is not set
+# CONFIG_UMP is not set
+# CONFIG_UMP_DEBUG is not set" >> ${CFGFILE} 
+ fi
+fi
+
+echo "# CONFIG_VGASTATE is not set
 # CONFIG_VIDEO_OUTPUT_CONTROL is not set
 CONFIG_FB=y
 # CONFIG_FIRMWARE_EDID is not set
@@ -2764,9 +2966,20 @@ CONFIG_EXT3_DEFAULTS_TO_ORDERED=y
 CONFIG_EXT4_FS=y
 CONFIG_EXT4_USE_FOR_EXT23=y
 # CONFIG_EXT4_FS_XATTR is not set
-# CONFIG_EXT4_DEBUG is not set
-CONFIG_EXFAT_FS=y
-CONFIG_JBD=y
+# CONFIG_EXT4_DEBUG is not set" >> ${CFGFILE}
+
+# SAW - EXFAT DRIVER OPTION
+if [[ -d fs/exfat || -h fs/exfat ]]; then
+ if [ "$SFAT" = "ON-MODULE" ]; then
+  echo "CONFIG_EXFAT_FS=m" >> ${CFGFILE}
+ elif [ "$SFAT" = "ON-KERNEL" ]; then
+  echo "CONFIG_EXFAT_FS=y" >> ${CFGFILE}
+ else
+  echo "# CONFIG_EXFAT_FS is not set" >> ${CFGFILE}
+ fi
+fi
+
+echo "CONFIG_JBD=y
 # CONFIG_JBD_DEBUG is not set
 CONFIG_JBD2=y
 # CONFIG_JBD2_DEBUG is not set

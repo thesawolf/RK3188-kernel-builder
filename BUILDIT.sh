@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERS="2.3"
+VERS="2.4"
 # LAZY-ASS BUILD SCRIPT (LABS) by
 # Thesawolf (thesawolf [at] gmail [d0t] com)
 #
@@ -47,6 +47,8 @@ VERS="2.3"
 # - changed special volts into a special settings area
 # - moved overclocking into a special options area
 # (2.3) config builder created and linked and config menu updated accordingly
+# - renamed scripts.. just because (now BUILDIT.sh and CFGCORE.sh)
+# (2.4) added in debugging, Mali and exFAT kernel options (if available)
 
 # initialize default settings 
 function initdef 
@@ -111,6 +113,9 @@ if [ -z $DEVNAME ]; then
    SETSPEC="OFF"
    SSPEC1="OFF"
    SSPEC2="OFF"
+   SDBG="ON"
+   SMALI="OFF"
+   SFAT="OFF"
 fi
 }
 
@@ -275,6 +280,9 @@ function devitems
 	   SETSPEC="OFF"
 	   SSPEC1="OFF"
 	   SSPEC2="OFF"
+	   SDBG="ON"
+	   SMALI="OFF"
+	   SFAT="OFF"
 	   mainopt
 	fi
   done
@@ -441,13 +449,20 @@ function subcpu
  do
   clear
   echo
-  echo "   ====[ OVERCLOCK CPU ]===="
+  echo "   ======================[ OVERCLOCK CPU ]======================="
+  echo 
+  echo "   WARNING! EXTREME overclocking is NOT supported nor operational"
+  echo "   on some devices. You may wish to view the frequency tables"
+  echo "   near the bottom of arch/arm/mach-rk3188/board-rk3188-box.c"
+  echo "   to verify/tweak the normal/overclock/extreme levels."
+  echo
+  echo "   =------------------------------------------------------------="  
   echo "   1. Overclock CPU: $CPUOC"
-  echo "   2. Extreme CPU O/C: $CPUOCX"
-  echo "   =-----------------------="
+  echo "   2. Extreme CPU Overclock: $CPUOCX"
+  echo "   =------------------------------------------------------------="
   echo "   9. Turn OFF CPU overclock"
-  echo "   ========================="
-  read -n 1 -p "   Select CPU O/C [0=EXIT]: " scpu
+  echo "   =============================================================="
+  read -n 1 -p "   Select CPU Overclock [0=EXIT]: " scpu
   if [ "$scpu" = "1" ]; then
 	if [ "$CPUOC" = "OFF" ]; then
 	 CPUOC="ON"
@@ -481,13 +496,20 @@ function subgpu
  do
   clear
   echo
-  echo "   ====[ OVERCLOCK GPU ]===="
-  echo "   1. Overclock GPU: $GPUOC"
-  echo "   2. Extreme GPU O/C: $GPUOCX"
-  echo "   =-----------------------="
-  echo "   9. Turn OFF GPU overclock"
-  echo "   ========================="
-  read -n 1 -p "   Select GPU O/C [0=EXIT]: " sgpu
+  echo "   ======================[ OVERCLOCK GPU ]======================="
+  echo 
+  echo "   WARNING! EXTREME overclocking is NOT supported nor operational"
+  echo "   on some devices. You may wish to view the frequency tables"
+  echo "   near the bottom of arch/arm/mach-rk3188/board-rk3188-box.c"
+  echo "   to verify/tweak the normal/overclock/extreme levels."
+  echo
+  echo "   =------------------------------------------------------------="  
+  echo "    1. Overclock GPU: $GPUOC"
+  echo "    2. Extreme GPU Overclock: $GPUOCX"
+  echo "   =------------------------------------------------------------="
+  echo "    9. Turn OFF GPU overclock"
+  echo "   =============================================================="
+  read -n 1 -p "   Select GPU Overclock [0=EXIT]: " sgpu
   if [ "$sgpu" = "1" ]; then
 	if [ "$GPUOC" = "OFF" ]; then
 	 GPUOC="ON"
@@ -521,13 +543,20 @@ function subddr
  do
   clear
   echo
-  echo "   ====[ OVERCLOCK RAM ]===="
-  echo "   1. Overclock RAM: $DDROC"
-  echo "   2. Extreme RAM O/C: $DDROCX"
-  echo "   =-----------------------="
-  echo "   9. Turn OFF RAM overclock"
-  echo "   ========================="
-  read -n 1 -p "   Select RAM O/C [0=EXIT]: " sddr
+  echo "   ======================[ OVERCLOCK RAM ]======================="
+  echo 
+  echo "   WARNING! EXTREME overclocking is NOT supported nor operational"
+  echo "   on some devices. You may wish to view the frequency tables"
+  echo "   near the bottom of arch/arm/mach-rk3188/board-rk3188-box.c"
+  echo "   to verify/tweak the normal/overclock/extrme levels."
+  echo
+  echo "   =------------------------------------------------------------="
+  echo "    1. Overclock RAM: $DDROC"
+  echo "    2. Extreme RAM Overclock: $DDROCX"
+  echo "   =------------------------------------------------------------="
+  echo "    9. Turn OFF RAM overclock"
+  echo "   =============================================================="
+  read -n 1 -p "   Select RAM Overclock [0=EXIT]: " sddr
   if [ "$sddr" = "1" ]; then
 	if [ "$DDROC" = "OFF" ]; then
 	 DDROC="ON"
@@ -643,7 +672,7 @@ function ocitems
  	echo "   =--------------------------------------------------="
  	echo "   9. Turn OFF overclock options"
  	echo "   ===================================================="
- 	read -n 1 -p "   Select O/C options [0=EXIT]: " ocopt
+ 	read -n 1 -p "   Select Overclock options [0=EXIT]: " ocopt
  	if [ "$ocopt" = "1" ]; then
  	   subcpu
  	elif [ "$ocopt" = "2" ]; then
@@ -671,8 +700,136 @@ function ocitems
  done
 }
 
-# options menu, currently just contains overclock submenu, but will look
-# into making peripherals optionally built via this menu
+# debugger option submenu
+function dbgitems
+{
+ dbgopt=""
+ while [ "$dbgopt" != "0" ]
+ do
+ 	clear
+ 	echo
+	echo "   ===================[ DEBUGGING OPTION ]==================="
+	echo "                          Current: $SDBG"
+	echo "   =--------------------------------------------------------="
+	echo "    This option is normally ON by default, simply because"
+	echo "    enabling debugging gives you more information to work"
+	echo "    with regarding these experimental kernels. The ONLY"
+	echo "    reason why one would turn this off would be to shave a"
+	echo "    little bit off their kernel size and improve performance"
+	echo "    slightly. It is recommended to leave this ON, unless you"
+	echo "    know your kernel is stable and knoe what you are doing."
+	echo "   =--------------------------------------------------------="
+	echo "               1. Turn ON kernel debugging (yay)"
+	echo "               =--------------------------------="
+	echo "               2. Turn OFF kernel debugging (boo)"
+        echo "   =========================================================="
+        read -n 1 -p "   Select an option [0=EXIT]: " dbgopt
+        if [ "$dbgopt" = "1" ]; then
+        	SDBG="ON"
+        elif [ "$dbgopt" = "2" ]; then
+        	SDBG="OFF"
+        fi
+ done
+}
+
+# Mali drivers option submenu
+function malitems
+{
+ maliopt=""
+ while [ "$maliopt" != "0" ]
+ do
+ 	clear
+ 	echo
+	echo "   ==================[ MALI DRIVER OPTION ]==================" 
+	echo -n "                        Current: "
+	if [[ -d drivers/gpu/mali || -h drivers/gpu/mali ]]; then
+	   echo "$SMALI"
+	else
+	   echo "DISABLED"
+	   MALICHK="0"
+	fi
+	echo "   =--------------------------------------------------------="
+	echo "    This option is mainly for ROM creation purposes, as using"
+	echo "    an existing Mali driver in an existing ROM is preferable"
+	echo "    to using your own compiled one due to all the system"
+	echo "    changes you need to make to replace theirs with yours."
+	echo "    If Mali drivers are not located in your kernel source in"
+	echo "    their preferred location in: drivers/gpu/mali then this"
+	echo "    option will be DISABLED and unavailable. Enable this only"
+	echo "    if you know what you are doing."
+	echo "   =--------------------------------------------------------="
+        if [ "$MALICHK" = "0" ]; then
+         echo "               MALI DRIVER OPTION IS DISABLED!"
+         echo
+         echo "    Cannot locate any mali driver sources in the preferred"
+         echo "    kernel source location (drivers/gpu/mali)."
+        else
+	 echo "           1. Turn ON Mali driver module creation."
+	 echo "           =--------------------------------------="
+	 echo "           2. Turn OFF Mali driver module creation."
+	fi
+	echo "   =========================================================="
+	read -n 1 -p "   Select an option (if available) [0=EXIT]: " maliopt
+	if [[ "$maliopt" = "1" && "$MALICHK" != "0" ]]; then
+		SMALI="ON"
+	elif [[ "$maliopt" = "2" && "$MALICHK" != "0" ]]; then
+		SMALI="OFF"
+	fi
+ done
+}
+
+# exFAT drivers option submenu
+function fatitems
+{
+ fatopt=""
+ while [ "$fatopt" != "0" ]
+ do
+ 	clear
+ 	echo
+	echo "   ================[ EXFAT FS DRIVER OPTION ]================" 
+	echo -n "                       Current: "
+	if [[ -d fs/exfat || -h fs/exfat ]]; then
+	   echo "$SFAT"
+	else
+	   echo "DISABLED"
+	   FATCHK="0"
+	fi
+	echo "   =--------------------------------------------------------="
+	echo "    This is for building the exFAT drivers (if available)."
+	echo "    Please note that there is a legality question regarding"
+	echo "    these drivers. If you have the exFAT sources installed,"
+	echo "    please make sure to read the README in that directory."
+	echo "    Also note that these drivers are a bit experimental too."
+	echo "    If the exFAT drivers aren't located in your kernel source"
+	echo "    in their preferred location in: fs/exfat then this option"
+	echo "    will be DISABLED and unavailable. Enable this only if you"
+	echo "    know what you are doing."
+	echo "   =--------------------------------------------------------="
+        if [ "$FATCHK" = "0" ]; then
+         echo "               EXFAT DRIVER OPTION IS DISABLED!"
+         echo
+         echo "    Cannot locate any exFAT driver sources in the preferred"
+         echo "    kernel source location (fs/exfat)."
+        else
+	 echo "          1. Turn ON exFAT driver MODULE creation."
+	 echo "                           - OR -"
+	 echo "          2. Turn ON exFAT (integrated into kernel)."
+         echo "          =----------------------------------------="
+	 echo "          3. Turn OFF exFAT driver creation."
+	fi
+	echo "   =========================================================="
+	read -n 1 -p "   Select an option (if available) [0=EXIT]: " fatopt
+	if [[ "$fatopt" = "1" && "$FATCHK" != "0" ]]; then
+		SFAT="ON-MODULE"
+	elif [[ "$fatopt" = "2" && "$FATCHK" != "0" ]]; then
+		SFAT="ON-KERNEL"
+	elif [[ "$fatopt" = "3" && "$FATCHK" != "0" ]]; then
+		SFAT="OFF"
+	fi
+ done
+}
+
+# options menu, will look put various optional features in here
 function optitems
 {
  optopt=""
@@ -681,7 +838,7 @@ function optitems
  	clear
  	echo
  	echo "   ===================[ OPTIONS MENU ]==================="
- 	echo -n "   1. Overclock : $SETOC"
+ 	echo -n "    1. Overclock: $SETOC"
 	if [ "$SETOC" != "OFF" ]; then
          echo -n " ["
 	 if [ "$CPUOC" = "ON" ]; then
@@ -709,10 +866,19 @@ function optitems
 	else
 	 echo
 	fi
+	echo "    2. Kernel debugging (dmesg/logs): $SDBG"
+	echo "    3. Mali kernel driver modules: $SMALI"
+	echo "    4. exFAT filesystem kernel drivers: $SFAT"
 	echo "   ======================================================"
 	read -n 1 -p "   Select an option [0=EXIT]: " optopt
 	if [ "$optopt" = "1" ]; then
 	   ocitems
+	elif [ "$optopt" = "2" ]; then
+	   dbgitems
+	elif [ "$optopt" = "3" ]; then
+	   malitems
+	elif [ "$optopt" = "4" ]; then
+	   fatitems
 	fi
  done
 }
@@ -723,7 +889,7 @@ function optitems
 # (easier to manage this way)
 function cfgbuild
 {
- . auxbuild.sh
+ . CFGCORE.sh
 }
 
 # toolchains menu, you can change this to different ones you might have
@@ -778,18 +944,29 @@ function tcitems
 }
 
 # just a reminder to "pop-up" before entering the menuconfig
+# merged in menuconfig caller to reduce some redundant code calls
 function poprem
 {
  checkcfg
  clear
- echo "Loading ($DEVREM) into .config..."
- echo 
- echo "REMINDER: If you make any changes and choose to save the .config,"
- echo " the .config will be copied over : $DEVREM"
+ if [ "$DEVREM" != "" ]; then
+  echo "Loading ($DEVREM) into .config..."
+  echo 
+  echo "REMINDER: If you make any changes and choose to save the .config,"
+  echo " the .config will be copied back over: $DEVREM"
+ fi
  echo " If you save the configuration to another file be sure to load"
  echo " that new config file in the configs menu when you are done!"
  echo
- read -n1 -p ">> Press any key to continue.."
+ read -n1 -p "          [ Press any key to continue ]"
+ if [ "$DEVREM" != "" ]; then
+  cp $DEVREM .config
+ fi
+ make ARCH=arm menuconfig
+ if [ "$DEVREM" != "" ]; then
+  mv .config $DEVREM
+  DEVREM="" 
+ fi
 }
 
 # old .config checker, nothing special. just makes backup of old one for you
@@ -847,7 +1024,7 @@ fi
 	   if [ "$NODEV" = "" ]; then
 	    DEVICE="(Auto-Generated TEMPCONFIG)"
 	    CFGFILE="TEMPCONFIG"
-	    . auxbuild.sh
+	    . CFGCORE.sh
 	    echo
 	    echo
 	    read -n 1 -p " TEMPCONFIG created for viewing.. [ Press any key to continue ]"
@@ -860,11 +1037,8 @@ fi
  	   if [ "$NODEV" = "" ]; then
 	    DEVREM="TEMPCONFIG"
 	    CFGFILE=${DEVREM}
-	    . auxbuild.sh
+	    . CFGCORE.sh
 	    poprem
-	    cp $DEVREM .config
-	    make ARCH=arm menuconfig
-	    mv .config $DEVREM
 	   else
 	    echo
 	    echo
@@ -874,7 +1048,7 @@ fi
  	   if [ "$NODEV" = "" ]; then
  	    DEVICE=${DEVFILE}
 	    CFGFILE=${DEVICE}
-	    . auxbuild.sh
+	    . CFGCORE.sh
 	    echo
 	    echo
 	    read -n 1 -p " ${CFGFILE} created and set.. [ Press any key to continue ]"
@@ -886,12 +1060,9 @@ fi
 	elif [[ "$cfgopt" = "W" || "$cfgopt" = "w" ]]; then
  	   if [ "$NODEV" = "" ]; then
 	    DEVREM=${DEVFILE}
+	    CFGFILE=${DEVREM}
+	    . CFGCORE.sh
 	    poprem
-	    checkcfg
-	    cp $DEVREM .config
-	    make ARCH=arm menuconfig
-            mv .config $DEVREM
-	    break
 	   else
 	    echo
 	    echo
@@ -899,6 +1070,8 @@ fi
 	   fi
         elif [[ "$cfgopt" = "L" || "$cfgopt" = "l" ]]; then
            clear
+           echo
+           echo
            echo "Specify your defconfig (full filename, case SENSITIVE) then press [ENTER]"
            read -e -p " (Leave blank and press [ENTER] to skip!) : " NEWDEF
            if [[ "$NEWDEF" != "" && -e ${NEWDEF} ]]; then
@@ -916,8 +1089,7 @@ fi
               read -n 1 -p "                [ Press any key to continue ]"
            fi           
 	elif [ "$cfgopt" = "9" ]; then
-	   checkcfg
-	   make ARCH=arm menuconfig
+	   poprem
 	fi
  done
 }
@@ -1328,6 +1500,9 @@ function scfig
  echo "SETSPEC=\"$SETSPEC\"" >> $BCFIG
  echo "SSPEC1=\"$SSPEC1\"" >> $BCFIG
  echo "SSPEC2=\"$SSPEC2\"" >> $BCFIG
+ echo "SDBG=\"$SDBG\"" >> $BCFIG
+ echo "SMALI=\"$SMALI\"" >> $BCFIG
+ echo "SFAT=\"$SFAT\"" >> $BCFIG
  echo
  echo
  read -n1 -p "   Builder config saved... (press any key to continue)"
@@ -1375,13 +1550,13 @@ function mainopt
 	echo "C| E. BLUETOOTH: $SETBT"
 	echo "E| F. PMU: $SETPMU"
 	echo "S| G. SPECIALS SETTINGS: $SETSPEC"
-	echo " | O. SPECIAL OPTIONS (ie Overclock)" 
+	echo " | O. SPECIAL OPTIONS (ie Overclock, Mali, exFAT)" 
 	echo " +-=-------------------------------------------------="
 	echo "   9. BUILD IT! (and they will come...)"
 	echo "   =-------------------------------------------------="
 	echo "   R. Reload build settings     S. Save build settings"
         echo "   ==================================================="
-	read -n 1 -p "   Enter your choice [0=Exit]: " choice
+	read -n 1 -p "   Enter your choice [0=EXIT]: " choice
 	if [ "$choice" = "1" ]; then
 		tcitems
 	elif [ "$choice" = "2" ]; then
