@@ -65,15 +65,18 @@ achieve the same results (for now, anyways)
 -------------------
 
 **REVISION HISTORY:**
-- based off build_mk908.sh (LABS 1.5) in my kernel source
+- (2.0) based off build_mk908.sh (LABS 1.5) in my kernel source
 - created new repo just for it, now LABS 2.1 and called buildit.sh
-- features added, more checkers, added QX1
+- (2.2) features added, more checkers, added QX1
+- (2.3) config builder created and linked and menus updated
+- config builder moved to separate script, not meant to be run alone
 
 **TODO:**
 - config builder mailer. If you customize your device config for a device 
 not on the list, have it email to me for inclusion in the script or you can
 just take the generated defconfig and get it to me
-- finish up the config builder
+- finish tweaking config builder to reflect builder options
+- get unattended building working under new system
 
 **CREDITS:**
 - Me (duh)

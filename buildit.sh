@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERS="2.2"
+VERS="2.3"
 # LAZY-ASS BUILD SCRIPT (LABS) by
 # Thesawolf (thesawolf [at] gmail [d0t] com)
 #
@@ -13,10 +13,6 @@ VERS="2.2"
 # located in arch/arm/mach-rk3188) If you want to use this
 # for your own kernel source look for the SAW comments
 # and copy them to your own accordingly.
-#
-# UPDATE (04AUG2013): Attempting to make this build script
-# more device-friendly per a community suggestion by 
-# phjanderson (@freaktab). Let's see where this goes..
 #
 # and YES.. I KNOW that some might consider this a bit
 # overkill but it just GREW into this script and I enjoy
@@ -42,14 +38,15 @@ VERS="2.2"
 # - reload/save config options from file
 # - commandline arguments (help, version, build)
 # Built off my mk908_build script -> now version 2.0
-# - device-neutral build system (hopefully)
+# (2.0) device-neutral build system (hopefully)
 # - create configs on the fly for building, no more storage
 # - moved toolchains locally to kernel dirs, updated options
-# - device build menus in place
+# (2.1) device build menus in place
 # - more device options, some new checkers and template store
-# - T428, QX1 added
+# (2.2) T428, QX1 added
 # - changed special volts into a special settings area
 # - moved overclocking into a special options area
+# (2.3) config builder created and linked and config menu updated accordingly
 
 # initialize default settings 
 function initdef 
@@ -72,7 +69,7 @@ if [ -z $CROSS_COMPILE ]; then
 fi
 
 if [ -z $DEVICE ]; then
- DEVICE="mk908-720-defconfig"
+ DEVICE="(Auto-Generated TEMPCONFIG)"
 fi
 
 if [ -z $OUTLOC ]; then
@@ -97,7 +94,7 @@ if [ -z $CUTIME ]; then
 fi
 
 if [ -z $DEVNAME ]; then
-   DEVNAME="NOT SPECIFIED"
+   DEVNAME=""
    SETHDMI="720"
    SETLCD="NOT SPECIFIED"
    SETWIFI="NOT SPECIFIED"
@@ -139,31 +136,32 @@ function outtahere
  exit
 }
 
-
-
 # Change device name option
 function cdev
 {
  checkspec
  clear
- echo
- echo "   ================[ DEVICE BUILD ]================="
- echo "   Enter a device name (this is mainly for reference"
- echo "   and setting a hostname based on that device name)"
- echo
- echo "   Using device template where: (can change later)"
- echo "             HDMI RESOLUTION: $SETHDMI"
- echo "             LCD SETTING: $SETLCD"
- echo "             WIFI CHIPSET: $SETWIFI"
- echo "             BLUETOOTH CHIPSET: $SETBT"
- echo "             PMU CHIPSET: $SETPMU"
- echo "             SPECIAL SETTINGS: $SETSPEC"
- echo "   ================================================="
- read -e -p "   Device name, no spaces [Blank to RETURN]: " DEVNAME
  if [ "$DEVNAME" = "" ]; then
+  echo
+  echo "   ================[ DEVICE BUILD ]================="
+  echo "   Enter a device name (this is mainly for reference"
+  echo "   and setting a hostname based on that device name)"
+  echo
+  echo "   Using device template where: (can change later)"
+  echo "             HDMI RESOLUTION: $SETHDMI"
+  echo "             LCD SETTING: $SETLCD"
+  echo "             WIFI CHIPSET: $SETWIFI"
+  echo "             BLUETOOTH CHIPSET: $SETBT"
+  echo "             PMU CHIPSET: $SETPMU"
+  echo "             SPECIAL SETTINGS: $SETSPEC"
+  echo "   ================================================="
+  read -e -p "   Device name, no spaces [Blank to RETURN]: " DEVNAME
+  DEVNAME=${DEVNAME^^}
+  if [ "$DEVNAME" = "" ]; then
 	devitems
- else
+  else
 	mainopt 
+  fi
  fi
 }
 
@@ -206,8 +204,8 @@ function devtemp
 function devitems
 {
  devopt=""
- while [[ "$devopt" != "X" || "$devopt" != "x" || "$devopt" != "0" ]]
- do
+  while [[ "$devopt" != "X" || "$devopt" != "x" || "$devopt" != "0" ]]
+  do
 	clear
 	echo
 	echo "   =============[ DEVICES MENU ]============="
@@ -216,20 +214,22 @@ function devitems
 	echo "   3. Imito QX-1"
 	echo "   =----------------------------------------="
 	echo "   A. (don't see your device? get it added!)"
+	echo "   X. Flush all device settings"
 	echo "   ==========================================="
 	echo "   0. Continue to LABS (without specifying)"
         echo 
-	echo "   >> X. I'm confused, get me out of here!"
-	echo 
 	read -n 1 -p "   Choose device building for: " devopt
 	if [ "$devopt" = "1" ]; then
 		DEVTEMPLATE="1"
+		DEVNAME=""
 		devtemp
 	elif [ "$devopt" = "2" ]; then
 		DEVTEMPLATE="2"
+		DEVNAME=""
 		devtemp
 	elif [ "$devopt" = "3" ]; then
 		DEVTEMPLATE="3"
+		DEVNAME=""
 		devtemp
 	elif [[ "$devopt" = "A" || "$devopt" = "a" ]]; then
 		clear
@@ -258,9 +258,26 @@ function devitems
 	elif [ "$devopt" = "0" ]; then
 		mainopt
 	elif [[ "$devopt" = "X" || "$devopt" = "x" ]]; then
-		outtahere
+	   DEVNAME=""
+	   SETHDMI="720"
+	   SETLCD="NOT SPECIFIED"
+	   SETWIFI="NOT SPECIFIED"
+	   SETBT="NOT SPECIFIED"
+	   SETPMU="NOT SPECIFIED"
+	   SETOC="OFF"
+	   CPUOC="OFF"
+	   CPUOCX="OFF"
+	   GPUOC="OFF"
+	   GPUOCX="OFF"
+	   DDROC="OFF"
+	   DDROCX="OFF"
+	   OVOLT="OFF"
+	   SETSPEC="OFF"
+	   SSPEC1="OFF"
+	   SSPEC2="OFF"
+	   mainopt
 	fi
- done
+  done
 }
 
 # HDMI settings menu
@@ -702,9 +719,11 @@ function optitems
 
 # CONFIG BUILDER
 # This will be modified as kernel components are determined for devices
+# moved this to a separate file since its so big with kernel config options
+# (easier to manage this way)
 function cfgbuild
 {
- echo
+ . auxbuild.sh
 }
 
 # toolchains menu, you can change this to different ones you might have
@@ -761,6 +780,7 @@ function tcitems
 # just a reminder to "pop-up" before entering the menuconfig
 function poprem
 {
+ checkcfg
  clear
  echo "Loading ($DEVREM) into .config..."
  echo 
@@ -772,6 +792,17 @@ function poprem
  read -n1 -p ">> Press any key to continue.."
 }
 
+# old .config checker, nothing special. just makes backup of old one for you
+function checkcfg
+{
+ if [ -e .config ]; then
+  # found some prior .config backing up, jic
+  echo
+  read -n 1 -p " Previous .config found, SOMEOLD.config backup made. [ Press any key ]"
+  mv .config SOMEOLD.config
+ fi
+}
+
 # device configs menu, these are all my preset ones with an option to 
 # edit them and now you can load your own
 function cfgitems
@@ -780,113 +811,112 @@ function cfgitems
  while [ "$cfgopt" != "0" ]
  do
 	clear 
+	echo "   ===========================[ CONFIGS MENU ]==========================="
+	echo "                    Current: $DEVICE"
 	echo
-	echo "   ==================[ CONFIGS MENU ]=================="
-	echo "    Current: $DEVICE"
-	echo "   =--------------------------------------------------="
-	echo "   1. mk908-720-debug-defconfig        <- Q. menuconfig"
-	echo "   2. mk908-1080-debug-defconfig       <- W. menuconfig"
-	echo "   3. mk908-720-defconfig              <- E. menuconfig"
-	echo "   4. mk908-1080-defconfig             <- R. menuconfig"
-        echo "   =--( Overclock kernels )---------------------------="
-	echo "   5. mk908-720-OC-debug-defconfig  <- T. menuconfig"
-	echo "   6. mk908-1080-OC-debug-defconfig <- Y. menuconfig"
-	echo "   7. mk908-720-OC-defconfig        <- U. menuconfig"
-	echo "   8. mk908-1080-OC-defconfig       <- I. menuconfig"
-	echo "   =--------------------------------------------------="
+	echo "   NOTE: TEMPCONFIGs are automatically created and removed at build time."	
+	echo "   Option 1 below is available so you can check out a TEMPCONFIG."
+	echo "   Permanent defconfigs are created with some feature flags in the"
+	echo "   filename to easily indicate features included."
+if [ "$DEVNAME" = "" ]; then
+	NODEV="1"
+	DEVFILE="NOT CONFIGURED (disabled)"
+	echo
+	echo "   WARNING! You have not configured any device settings to work with to"
+	echo "   create a TEMPCONFIG or defconfig. Go back to the main menu and do that"
+	echo "   now if you want to work with some of the features in this menu."
+else
+	NODEV=""
+	if [ "$SETOC" = "ON" ]; then
+		OCFLAG="OC-"
+	fi
+	DEVFILE="${DEVNAME}-${SETHDMI}-${OCFLAG}defconfig"
+fi
+	echo "   =--------------------------------------------------------------------="
+	echo "     1. Build a TEMPCONFIG (based on device settings) for viewing"
+	echo "       Q. menuconfig >> TEMPCONFIG"
+        echo "     2. Build a permanent config (from device settings) for usage"
+        echo "       W. menuconfig >> $DEVFILE"
+	echo "   =--------------------------------------------------------------------="
 	echo "     9. make menuconfig (with no defconfig set)"
-        echo "   =--------------------------------------------------="
-        echo "     L. load your own specified defconfig"
-	echo "   ===================================================="
+	echo "   =--------------------------------------------------------------------="
+        echo "     L. load your own defconfig (you will specify that here)"
+	echo "   ======================================================================"
 	read -n 1 -p "   Select Option [0=EXIT]: " cfgopt
 	if [ "$cfgopt" = "1" ]; then
-	   DEVICE=mk908-720-debug-defconfig
-	   break
+	   if [ "$NODEV" = "" ]; then
+	    DEVICE="(Auto-Generated TEMPCONFIG)"
+	    CFGFILE="TEMPCONFIG"
+	    . auxbuild.sh
+	    echo
+	    echo
+	    read -n 1 -p " TEMPCONFIG created for viewing.. [ Press any key to continue ]"
+	   else
+	    echo
+	    echo
+	    read -n 1 -p " TEMPCONFIG NOT created (no device settings set) [ Press any key ]"
+	   fi
 	elif [[ "$cfgopt" = "Q" || "$cfgopt" = "q" ]]; then
-	   DEVREM="mk908-720-debug-defconfig"
-	   poprem
-	   cp $DEVREM .config
-	   make ARCH=arm menuconfig
-	   cp .config $DEVREM
-	   break
+ 	   if [ "$NODEV" = "" ]; then
+	    DEVREM="TEMPCONFIG"
+	    CFGFILE=${DEVREM}
+	    . auxbuild.sh
+	    poprem
+	    cp $DEVREM .config
+	    make ARCH=arm menuconfig
+	    mv .config $DEVREM
+	   else
+	    echo
+	    echo
+	    read -n 1 -p " Cannot edit TEMPCONFIG (no device settings set) [ Press any key ]"
+	   fi
 	elif [ "$cfgopt" = "2" ]; then
-	   DEVICE=mk908-1080-debug-defconfig
-	   break
+ 	   if [ "$NODEV" = "" ]; then
+ 	    DEVICE=${DEVFILE}
+	    CFGFILE=${DEVICE}
+	    . auxbuild.sh
+	    echo
+	    echo
+	    read -n 1 -p " ${CFGFILE} created and set.. [ Press any key to continue ]"
+	   else
+	    echo
+	    echo
+	    read -n 1 -p " Cannot create a defconfig (no device settings) [ Press any key ]"
+	   fi
 	elif [[ "$cfgopt" = "W" || "$cfgopt" = "w" ]]; then
-	   DEVREM="mk908-1080-debug-defconfig"
-	   poprem
-	   cp $DEVREM .config
-	   make ARCH=arm menuconfig
-           cp .config $DEVREM
-	   break
-	elif [ "$cfgopt" = "3" ]; then
-	   DEVICE=mk908-720-defconfig
-	   break
-	elif [[ "$cfgopt" = "E" || "$cfgopt" = "e" ]]; then
-	   DEVREM="mk908-720-defconfig"
-	   poprem
-	   cp $DEVREM .config
-	   make ARCH=arm menuconfig
-	   cp .config $DEVREM
-	   break
-	elif [ "$cfgopt" = "4" ]; then
-	   DEVICE=mk908-1080-defconfig
-	   break
-	elif [[ "$cfgopt" = "R" || "$cfgopt" = "r" ]]; then
-	   DEVREM="mk908-1080-defconfig"
-	   poprem
-	   cp $DEVREM .config
-	   make ARCH=arm menuconfig
-	   cp .config $DEVREM 
-	   break
-	elif [ "$cfgopt" = "5" ]; then
-	   DEVICE=mk908-720-OC-debug-defconfig
-	   break
-	elif [[ "$cfgopt" = "T" || "$cfgopt" = "t" ]]; then
-	   DEVREM="mk908-720-OC-debug-defconfig"
-	   poprem
-	   cp $DEVREM .config
-	   make ARCH=arm menuconfig
-	   cp .config $DEVREM 
-	   break
-	elif [ "$cfgopt" = "6" ]; then
-	   DEVICE=mk908-1080-OC-debug-defconfig
-	   break
-	elif [[ "$cfgopt" = "Y" || "$cfgopt" = "y" ]]; then
-	   DEVREM="mk908-1080-OC-debug-defconfig"
-	   poprem
-	   cp $DEVREM .config
-	   make ARCH=arm menuconfig
-	   cp .config $DEVREM 
-	   break
-	elif [ "$cfgopt" = "7" ]; then
-	   DEVICE=mk908-720-OC-defconfig
-	   break
-	elif [[ "$cfgopt" = "U" || "$cfgopt" = "u" ]]; then
-	   DEVREM="mk908-720-OC-defconfig"
-	   poprem
-	   cp $DEVREM .config
-	   make ARCH=arm menuconfig
-	   cp .config $DEVREM 
-	   break
-	elif [ "$cfgopt" = "8" ]; then
-	   DEVICE=mk908-1080-OC-defconfig
-	   break
-	elif [[ "$cfgopt" = "I" || "$cfgopt" = "i" ]]; then
-	   DEVREM="mk908-1080-OC-defconfig"
-	   poprem
-	   cp $DEVREM .config
-	   make ARCH=arm menuconfig
-	   cp .config $DEVREM 
-	   break
+ 	   if [ "$NODEV" = "" ]; then
+	    DEVREM=${DEVFILE}
+	    poprem
+	    checkcfg
+	    cp $DEVREM .config
+	    make ARCH=arm menuconfig
+            mv .config $DEVREM
+	    break
+	   else
+	    echo
+	    echo
+	    read -n 1 -p " Cannot edit a defconfig (no device settings) [ Press any key ]"
+	   fi
         elif [[ "$cfgopt" = "L" || "$cfgopt" = "l" ]]; then
            clear
-           echo "Specify your own defconfig here (full filename) then press [ENTER]"
+           echo "Specify your defconfig (full filename, case SENSITIVE) then press [ENTER]"
            read -e -p " (Leave blank and press [ENTER] to skip!) : " NEWDEF
-           if [ "$NEWDEF" != "" ]; then
+           if [[ "$NEWDEF" != "" && -e ${NEWDEF} ]]; then
               DEVICE=$NEWDEF
+           elif [[ "$NEWDEF" != "" && ! -e ${NEWDEF} ]]; then
+              echo
+              echo "=-----------------------------------------------------------------------="	      
+              echo
+              echo "   WARNING! NO defconfig named \"$NEWDEF\" was found!"
+              echo
+              echo "   Check your filename again and make sure it is located in the same"
+              echo "   directory as the builder script! (Remember, this defconfig loader"
+              echo "   is CASE SENSITIVE, as well)"
+              echo
+              read -n 1 -p "                [ Press any key to continue ]"
            fi           
 	elif [ "$cfgopt" = "9" ]; then
+	   checkcfg
 	   make ARCH=arm menuconfig
 	fi
  done
@@ -1281,9 +1311,26 @@ function scfig
  echo "CUTIME=\"$CUTIME\"" >> $BCFIG
  echo "CUDESC=\"$CUDESC\"" >> $BCFIG
  echo "CUPARM=\"$CUPARM\"" >> $BCFIG
+ echo "DEVNAME=\"$DEVNAME\"" >> $BCFIG
+ echo "SETHDMI=\"$SETHDMI\"" >> $BCFIG
+ echo "SETLCD=\"$SETLCD\"" >> $BCFIG
+ echo "SETWIFI=\"$SETWIFI\"" >> $BCFIG
+ echo "SETBT=\"$SETBT\"" >> $BCFIG
+ echo "SETPMU=\"$SETPMU\"" >> $BCFIG
+ echo "SETOC=\"$SETOC\"" >> $BCFIG
+ echo "CPUOC=\"$CPUOC\"" >> $BCFIG
+ echo "CPUOCX=\"$CPUOCX\"" >> $BCFIG
+ echo "GPUOC=\"$GPUOC\"" >> $BCFIG
+ echo "GPUOCX=\"$GPUOCX\"" >> $BCFIG
+ echo "DDROC=\"$DDROC\"" >> $BCFIG
+ echo "DDROCX=\"$DDROCX\"" >> $BCFIG
+ echo "OVOLT=\"$OVOLT\"" >> $BCFIG
+ echo "SETSPEC=\"$SETSPEC\"" >> $BCFIG
+ echo "SSPEC1=\"$SSPEC1\"" >> $BCFIG
+ echo "SSPEC2=\"$SSPEC2\"" >> $BCFIG
  echo
  echo
- read -n1 -p "   Config file saved... (press any key to continue)"
+ read -n1 -p "   Builder config saved... (press any key to continue)"
 }
 
 # fasttrack option
@@ -1316,7 +1363,12 @@ function mainopt
         echo "D| 5. CLEAN-UP: $CUDESC"
 	echo "S| 6. THREADS: $THREADS"
         echo " |-=-------------------------------------------------="
-	echo "D| A. Device Selection: $DEVNAME"
+	echo -n "D| A. Device Selection: "
+	if [ "$DEVNAME" = "" ]; then
+		echo "NOT SPECIFIED"
+	else
+		echo "$DEVNAME"
+	fi
 	echo "E| B. HDMI RESOLUTION: $SETHDMI"
 	echo "V| C. LCD SETTING: $SETLCD"
 	echo "I| D. WIFI: $SETWIFI"
@@ -1410,5 +1462,9 @@ done
 # functions to run if script run like normal
 initdef
 icfig
-devitems
+if [ "$DEVNAME" = "" ]; then
+ devitems
+else
+ mainopt
+fi
 outtahere
