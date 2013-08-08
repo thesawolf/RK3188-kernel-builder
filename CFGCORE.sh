@@ -426,7 +426,7 @@ CONFIG_MACH_RK3188_BOX=y
 # SAW - need to find a way to make this kernel neutral in case someone
 # using these scripts does not have these changes implemented in their
 # board files..(TODO)
-if [ "$SETOC" = "OFF" ]; then
+if [ "$SETCL" = "OFF" ]; then
  echo "#
 # RK3188 OVERCLOCK
 #
@@ -436,7 +436,8 @@ if [ "$SETOC" = "OFF" ]; then
 # CONFIG_EXTREME_OCGPU is not set
 # CONFIG_OVERCLOCK_RAM is not set
 # CONFIG_EXTREME_OCRAM is not set
-# CONFIG_OVERVOLT_CPU is not set" >> ${CFGFILE}
+# CONFIG_OVERVOLT is not set
+# CONFIG_UNDERVOLT is not" >> ${CFGFILE}
 else 
  echo "#
 # RK3188 OVERCLOCK
@@ -472,22 +473,32 @@ else
   echo "# CONFIG_EXTREME_OCRAM is not set" >> ${CFGFILE}
  fi
  if [ "$OVOLT" = "ON" ]; then
-  echo "CONFIG_OVERVOLT_CPU=y" >> ${CFGFILE}
+  echo "CONFIG_OVERVOLT=y" >> ${CFGFILE}
  else
-  echo "# CONFIG_OVERVOLT_CPU is not set" >> ${CFGFILE}
+  echo "# CONFIG_OVERVOLT is not set" >> ${CFGFILE}
+ fi
+ if [ "$UVOLT" = "ON" ]; then
+  echo "CONFIG_UNDERVOLT=y" >> ${CFGFILE}
+ else
+  echo "# CONFIG_UNDERVOLT is not set" >> ${CFGFILE}
  fi
 fi
 
 # SAW - Special requirements options
-if [ "$SSPEC1" = "ON" ]; then
- echo "CONFIG_RK_VOLT1=y" >> ${CFGFILE}
+if [ "$SSPEC3" = "ON" ]; then
+ echo "CONFIG_TCC_BT_DEV_POWER_PIN3_PD1=y" >> ${CFGFILE}
 else
- echo "# CONFIG_RK_VOLT1 is not set" >> ${CFGFILE}
+ echo "# CONFIG_TCC_BT_DEV_POWER_PIN3_PD1 is not set" >> ${CFGFILE}
 fi
 if [ "$SSPEC2" = "ON" ]; then
- echo "CONFIG_RK_VOLT2=y" >> ${CFGFILE}
+ echo "CONFIG_ACT8846_DCDC4_30V=y" >> ${CFGFILE}
 else
- echo "# CONFIG_RK_VOLT2 is not set" >> ${CFGFILE}
+ echo "# CONFIG_ACT8846_DCDC4_30V is not set" >> ${CFGFILE}
+fi
+if [ "$SSPEC1" = "ON" ]; then
+ echo "CONFIG_ACT8846_LDO6_18V=y" >> ${CFGFILE}
+else
+ echo "# CONFIG_ACT8846_LDO6_18V is not set" >> ${CFGFILE}
 fi
 
 echo "
@@ -1337,7 +1348,7 @@ CONFIG_APANIC_PLABEL=\"kpanic\"
 # CONFIG_MODEM_SOUND is not set" >> ${CFGFILE}
 
 # SAW - BT for QX1
-if [ "$SETBT" = "ON" ]; then
+if [ "$SETBT" = "RDA58" ]; then
  echo "CONFIG_TCC_BT_DEV=y" >> ${CFGFILE}
 else
  echo "# CONFIG_TCC_BT_DEV is not set" >> ${CFGFILE}
