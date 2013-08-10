@@ -420,14 +420,14 @@ CONFIG_SOC_RK3188=y
 # CONFIG_MACH_RK3188_FPGA is not set
 # CONFIG_MACH_RK3188_LR097 is not set
 # CONFIG_MACH_RK3188_DS1006H is not set
-CONFIG_MACH_RK3188_BOX=y
-" >> ${CFGFILE}
+CONFIG_MACH_RK3188_BOX=y" >> ${CFGFILE}
 
 # SAW - Clocking options, if defines not found, skip it
-if grep -q "CONFIG_OVER" arch/arm/mach-rk3188/*
+if grep -q -s "CONFIG_OVER" arch/arm/mach-rk3188/*
 then
  if [ "$SETCL" = "OFF" ]; then
-  echo "#
+  echo "
+#
 # RK3188 OVERCLOCK
 #
 # CONFIG_OVERCLOCK_CPU is not set
@@ -439,7 +439,8 @@ then
 # CONFIG_OVERVOLT is not set
 # CONFIG_UNDERVOLT is not set" >> ${CFGFILE}
  else 
-  echo "#
+  echo "
+#
 # RK3188 OVERCLOCK
 #" >> ${CFGFILE}
   if [ "$CPUOC" = "ON" ]; then
@@ -486,7 +487,7 @@ then
 fi 
 
 # SAW - Special requirements options
-if grep -q "CONFIG_TCC_BT_DEV_POWER_PIN3_PD1" arch/arm/mach-rk3188/*
+if grep -q -s "CONFIG_TCC_BT_DEV_POWER_PIN3_PD1" arch/arm/mach-rk3188/*
 then
  if [ "$SSPEC3" = "ON" ]; then
   echo "CONFIG_TCC_BT_DEV_POWER_PIN3_PD1=y" >> ${CFGFILE}
@@ -494,7 +495,7 @@ then
   echo "# CONFIG_TCC_BT_DEV_POWER_PIN3_PD1 is not set" >> ${CFGFILE}
  fi
 fi
-if grep -q "CONFIG_ACT8846_DCDC4_30V" arch/arm/mach-rk3188/*
+if grep -q -s "CONFIG_ACT8846_DCDC4_30V" arch/arm/mach-rk3188/*
 then
  if [ "$SSPEC2" = "ON" ]; then
   echo "CONFIG_ACT8846_DCDC4_30V=y" >> ${CFGFILE}
@@ -502,7 +503,7 @@ then
   echo "# CONFIG_ACT8846_DCDC4_30V is not set" >> ${CFGFILE}
  fi
 fi
-if grep -q "CONFIG_ACT8846_LDO6_18V" arch/arm/mach-rk3188/*
+if grep -q -s "CONFIG_ACT8846_LDO6_18V" arch/arm/mach-rk3188/*
 then
  if [ "$SSPEC1" = "ON" ]; then
   echo "CONFIG_ACT8846_LDO6_18V=y" >> ${CFGFILE}
